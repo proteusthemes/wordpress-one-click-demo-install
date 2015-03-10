@@ -122,6 +122,7 @@ class Radium_Theme_Importer {
 
 				<script>
 					jQuery( function ( $ ) {
+						'use strict';
 						$( '.js-one-click-import-form' ).on( 'submit', function () {
 							$( this ).append( '<p style="font-width: bold; font-size: 1.5em;"><span class="spinner" style="display: inline-block; float: none;"></span> Importing now, please wait!</p>' );
 							$( this ).find( '.panel-save' ).attr( 'disabled', true );
