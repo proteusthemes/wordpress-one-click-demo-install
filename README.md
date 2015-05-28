@@ -19,7 +19,7 @@ public $content_demo_url = 'http://your_domain.com/path-to-file/content.xml';
 public $widget_demo_url  = 'http://your_domain.com/path-to-file/widgets.json';
 ```
 
-These files are then saved in the theme upload directory and used for demo import.
+These files are then saved in the WordPress upload directory and used for demo import.
 
 
 ### How to use:
