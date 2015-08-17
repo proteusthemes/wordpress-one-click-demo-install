@@ -84,7 +84,7 @@ class Radium_Theme_Importer {
 	 */
 	public function add_admin() {
 
-		add_submenu_page('themes.php', "Import Demo Data", "Import Demo Data", 'switch_themes', 'radium_demo_installer', array($this, 'demo_installer'));
+		add_theme_page("Import Demo Data", "Import Demo Data", 'switch_themes', 'radium_demo_installer', array($this, 'demo_installer'));
 
 	}
 
