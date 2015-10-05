@@ -5,7 +5,7 @@
  * This file is just the example, do to require it directly. Instead copy it to your theme and modify by your own needs.
  */
 
-require_once( dirname( __FILE__ ) . '/radium-importer.php' ); //load admin theme data importer
+require_once get_template_directory() . '/path/to/radium-importer.php' ; //load admin theme data importer
 
 class Radium_Theme_Demo_Data_Importer extends Radium_Theme_Importer {
 
