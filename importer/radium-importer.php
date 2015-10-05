@@ -307,7 +307,8 @@ class Radium_Theme_Importer {
 		}
 
 		// Get file contents and decode
-		$data = file_get_contents( $file );
+		global $wp_filesystem;
+		$data = $wp_filesystem->get_contents( $file );
 
 		$data = unserialize( trim($data, '###') );
 
@@ -385,7 +386,8 @@ class Radium_Theme_Importer {
 		}
 
 		// Get file contents and decode
-		$data = file_get_contents( $file );
+		global $wp_filesystem;
+		$data = $wp_filesystem->get_contents( $file );
 		$data = json_decode( $data );
 
 		// Delete import file
