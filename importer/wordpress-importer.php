@@ -5,7 +5,7 @@ Plugin URI: http://wordpress.org/extend/plugins/wordpress-importer/
 Description: Import posts, pages, comments, custom fields, categories, tags and more from a WordPress export file.
 Author: wordpressdotorg
 Author URI: http://wordpress.org/
-Version: 0.6
+Version: 0.6.1
 Text Domain: wordpress-importer
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
@@ -237,7 +237,7 @@ class WP_Import extends WP_Importer {
 			foreach ( $import_data['posts'] as $post ) {
 				$login = sanitize_user( $post['post_author'], true );
 				if ( empty( $login ) ) {
-					printf( esc_html__( 'Failed to import author %s. Their posts will be attributed to the current user.', 'radium' ), $post['post_author'] );
+					printf( esc_html__( 'Failed to import author %s. Their posts will be attributed to the current user.', 'radium' ), esc_html( $post['post_author'] ) );
 					echo '<br />';
 					continue;
 				}
@@ -266,7 +266,7 @@ class WP_Import extends WP_Importer {
 	<h3><?php esc_html_e( 'Assign Authors', 'radium' ); ?></h3>
 	<p><?php esc_html_e( 'To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site. For example, you may want to import all the entries as <code>admin</code>s entries.', 'radium' ); ?></p>
 <?php if ( $this->allow_create_users() ) : ?>
-	<p><?php printf( esc_htmlesc_html__( 'If a new user is created by WordPress, a new password will be randomly generated and the new user&#8217;s role will be set as %s. Manually changing the new user&#8217;s details will be necessary.', 'radium' ), get_option( 'default_role' ) ); ?></p>
+	<p><?php printf( esc_html__( 'If a new user is created by WordPress, a new password will be randomly generated and the new user&#8217;s role will be set as %s. Manually changing the new user&#8217;s details will be necessary.', 'radium' ), esc_html( get_option('default_role') ) ); ?></p>
 <?php endif; ?>
 	<ol id="authors">
 <?php foreach ( $this->authors as $author ) : ?>
@@ -371,7 +371,7 @@ class WP_Import extends WP_Importer {
 						$this->processed_authors[$old_id] = $user_id;
 					$this->author_mapping[$santized_old_login] = $user_id;
 				} else {
-					printf( esc_html__( 'Failed to create new user for %s. Their posts will be attributed to the current user.', 'radium' ), $this->authors[$old_login]['author_display_name'] );
+					printf( esc_html__( 'Failed to create new user for %s. Their posts will be attributed to the current user.', 'radium' ), esc_html($this->authors[$old_login]['author_display_name']) );
 					if ( defined('IMPORT_DEBUG') && IMPORT_DEBUG )
 						echo ' ' . $user_id->get_error_message();
 					echo '<br />';
@@ -393,6 +393,8 @@ class WP_Import extends WP_Importer {
 	 * Doesn't create a new category if its slug already exists
 	 */
 	function process_categories() {
+		$this->categories = apply_filters( 'wp_import_categories', $this->categories );
+
 		if ( empty( $this->categories ) )
 			return;
 
@@ -420,7 +422,7 @@ class WP_Import extends WP_Importer {
 				if ( isset($cat['term_id']) )
 					$this->processed_terms[intval($cat['term_id'])] = $id;
 			} else {
-				printf( esc_html__( 'Failed to import category %s', 'radium' ), $cat['category_nicename'] );
+				printf( esc_html__( 'Failed to import category %s', 'radium' ), esc_html($cat['category_nicename']) );
 				if ( defined('IMPORT_DEBUG') && IMPORT_DEBUG )
 					echo ': ' . $id->get_error_message();
 				echo '<br />';
@@ -437,6 +439,8 @@ class WP_Import extends WP_Importer {
 	 * Doesn't create a tag if its slug already exists
 	 */
 	function process_tags() {
+		$this->tags = apply_filters( 'wp_import_tags', $this->tags );
+
 		if ( empty( $this->tags ) )
 			return;
 
@@ -458,7 +462,7 @@ class WP_Import extends WP_Importer {
 				if ( isset($tag['term_id']) )
 					$this->processed_terms[intval($tag['term_id'])] = $id['term_id'];
 			} else {
-				printf( esc_html__( 'Failed to import post tag %s', 'radium' ), $tag['tag_name'] );
+				printf( esc_html__( 'Failed to import post tag %s', 'radium' ), esc_html($tag['tag_name']) );
 				if ( defined('IMPORT_DEBUG') && IMPORT_DEBUG )
 					echo ': ' . $id->get_error_message();
 				echo '<br />';
@@ -475,6 +479,8 @@ class WP_Import extends WP_Importer {
 	 * Doesn't create a term its slug already exists
 	 */
 	function process_terms() {
+		$this->terms = apply_filters( 'wp_import_terms', $this->terms );
+
 		if ( empty( $this->terms ) )
 			return;
 
@@ -502,7 +508,7 @@ class WP_Import extends WP_Importer {
 				if ( isset($term['term_id']) )
 					$this->processed_terms[intval($term['term_id'])] = $id['term_id'];
 			} else {
-				printf( esc_html__( 'Failed to import %s %s', 'radium' ), $term['term_taxonomy'], $term['term_name'] );
+				printf( esc_html__( 'Failed to import %s %s', 'radium' ), esc_html($term['term_taxonomy']), esc_html($term['term_name']) );
 				if ( defined('IMPORT_DEBUG') && IMPORT_DEBUG )
 					echo ': ' . $id->get_error_message();
 				echo '<br />';
@@ -522,11 +528,16 @@ class WP_Import extends WP_Importer {
 	 * Note that new/updated terms, comments and meta are imported for the last of the above.
 	 */
 	function process_posts() {
+		$this->posts = apply_filters( 'wp_import_posts', $this->posts );
+
 		foreach ( $this->posts as $post ) {
+			$post = apply_filters( 'wp_import_post_data_raw', $post );
+
 			if ( ! post_type_exists( $post['post_type'] ) ) {
 				printf( esc_html__( 'Failed to import &#8220;%s&#8221;: Invalid post type %s', 'radium' ),
-					$post['post_title'], $post['post_type'] );
+					esc_html($post['post_title']), esc_html($post['post_type']) );
 				echo '<br />';
+				do_action( 'wp_import_post_exists', $post );
 				continue;
 			}
 
@@ -545,7 +556,7 @@ class WP_Import extends WP_Importer {
 
 			$post_exists = post_exists( $post['post_title'], '', $post['post_date'] );
 			if ( $post_exists && get_post_type( $post_exists ) == $post['post_type'] ) {
-				printf( esc_html__('%s &#8220;%s&#8221; already exists.', 'radium'), $post_type_object->labels->singular_name, $post['post_title'] );
+				printf( __('%s &#8220;%s&#8221; already exists.', 'radium'), $post_type_object->labels->singular_name, esc_html($post['post_title']) );
 				echo '<br />';
 				$comment_post_ID = $post_id = $post_exists;
 			} else {
@@ -578,6 +589,9 @@ class WP_Import extends WP_Importer {
 					'post_type' => $post['post_type'], 'post_password' => $post['post_password']
 				);
 
+				$original_post_ID = $post['post_id'];
+				$postdata = apply_filters( 'wp_import_post_data_processed', $postdata, $post );
+
 				if ( 'attachment' == $postdata['post_type'] ) {
 					$remote_url = ! empty($post['attachment_url']) ? $post['attachment_url'] : $post['guid'];
 
@@ -597,11 +611,12 @@ class WP_Import extends WP_Importer {
 					$comment_post_ID = $post_id = $this->process_attachment( $postdata, $remote_url );
 				} else {
 					$comment_post_ID = $post_id = wp_insert_post( $postdata, true );
+					do_action( 'wp_import_insert_post', $post_id, $original_post_ID, $postdata, $post );
 				}
 
 				if ( is_wp_error( $post_id ) ) {
-					printf( esc_html__( 'Failed to import %s &#8220;%s&#8221;', 'radium' ),
-						$post_type_object->labels->singular_name, $post['post_title'] );
+					printf( __( 'Failed to import %s &#8220;%s&#8221;', 'radium' ),
+						$post_type_object->labels->singular_name, esc_html($post['post_title']) );
 					if ( defined('IMPORT_DEBUG') && IMPORT_DEBUG )
 						echo ': ' . $post_id->get_error_message();
 					echo '<br />';
@@ -615,6 +630,11 @@ class WP_Import extends WP_Importer {
 			// map pre-import ID to local ID
 			$this->processed_posts[intval($post['post_id'])] = (int) $post_id;
 
+			if ( ! isset( $post['terms'] ) )
+				$post['terms'] = array();
+
+			$post['terms'] = apply_filters( 'wp_import_post_terms', $post['terms'], $post_id, $post );
+
 			// add categories, tags and other terms
 			if ( ! empty( $post['terms'] ) ) {
 				$terms_to_set = array();
@@ -627,11 +647,13 @@ class WP_Import extends WP_Importer {
 						$t = wp_insert_term( $term['name'], $taxonomy, array( 'slug' => $term['slug'] ) );
 						if ( ! is_wp_error( $t ) ) {
 							$term_id = $t['term_id'];
+							do_action( 'wp_import_insert_term', $t, $term, $post_id, $post );
 						} else {
-							printf( esc_html__( 'Failed to import %s %s', 'radium' ), $taxonomy, $term['name'] );
+							printf( esc_html__( 'Failed to import %s %s', 'radium' ), esc_html($taxonomy), esc_html($term['name']) );
 							if ( defined('IMPORT_DEBUG') && IMPORT_DEBUG )
 								echo ': ' . $t->get_error_message();
 							echo '<br />';
+							do_action( 'wp_import_insert_term_failed', $t, $term, $post_id, $post );
 							continue;
 						}
 					}
@@ -640,9 +662,15 @@ class WP_Import extends WP_Importer {
 
 				foreach ( $terms_to_set as $tax => $ids ) {
 					$tt_ids = wp_set_post_terms( $post_id, $ids, $tax );
+					do_action( 'wp_import_set_post_terms', $tt_ids, $ids, $tax, $post_id, $post );
 				}
 				unset( $post['terms'], $terms_to_set );
 			}
+
+			if ( ! isset( $post['comments'] ) )
+				$post['comments'] = array();
+
+			$post['comments'] = apply_filters( 'wp_import_post_comments', $post['comments'], $post_id, $post );
 
 			// add/update comments
 			if ( ! empty( $post['comments'] ) ) {
@@ -674,6 +702,7 @@ class WP_Import extends WP_Importer {
 							$comment['comment_parent'] = $inserted_comments[$comment['comment_parent']];
 						$comment = wp_filter_comment( $comment );
 						$inserted_comments[$key] = wp_insert_comment( $comment );
+						do_action( 'wp_import_insert_comment', $inserted_comments[$key], $comment, $comment_post_ID, $post );
 
 						foreach( $comment['commentmeta'] as $meta ) {
 							$value = maybe_unserialize( $meta['value'] );
@@ -686,10 +715,15 @@ class WP_Import extends WP_Importer {
 				unset( $newcomments, $inserted_comments, $post['comments'] );
 			}
 
+			if ( ! isset( $post['postmeta'] ) )
+				$post['postmeta'] = array();
+
+			$post['postmeta'] = apply_filters( 'wp_import_post_meta', $post['postmeta'], $post_id, $post );
+
 			// add/update post meta
-			if ( isset( $post['postmeta'] ) ) {
+			if ( ! empty( $post['postmeta'] ) ) {
 				foreach ( $post['postmeta'] as $meta ) {
-					$key = apply_filters( 'import_post_meta_key', $meta['key'] );
+					$key = apply_filters( 'import_post_meta_key', $meta['key'], $post_id, $post );
 					$value = false;
 
 					if ( '_edit_last' == $key ) {
@@ -753,7 +787,7 @@ class WP_Import extends WP_Importer {
 
 		$menu_id = term_exists( $menu_slug, 'nav_menu' );
 		if ( ! $menu_id ) {
-			printf( esc_html__( 'Menu item skipped due to invalid menu slug: %s', 'radium' ), $menu_slug );
+			printf( esc_html__( 'Menu item skipped due to invalid menu slug: %s', 'radium' ), esc_html( $menu_slug ) );
 			echo '<br />';
 			return;
 		} else {
@@ -879,7 +913,7 @@ class WP_Import extends WP_Importer {
 		// make sure the fetch was successful
 		if ( $headers['response'] != '200' ) {
 			@unlink( $upload['file'] );
-			return new WP_Error( 'import_file_error', sprintf( esc_html__('Remote server returned error response %1$d %2$s', 'radium'), $headers['response'], get_status_header_desc($headers['response']) ) );
+			return new WP_Error( 'import_file_error', sprintf( esc_html__('Remote server returned error response %1$d %2$s', 'radium'), esc_html($headers['response']), get_status_header_desc($headers['response']) ) );
 		}
 
 		$filesize = filesize( $upload['file'] );
@@ -1072,7 +1106,7 @@ class WP_Import extends WP_Importer {
 	 * Added to http_request_timeout filter to force timeout at 60 seconds during import
 	 * @return int 60
 	 */
-	function bump_request_timeout( $val ) {
+	function bump_request_timeout() {
 		return 60;
 	}
 
