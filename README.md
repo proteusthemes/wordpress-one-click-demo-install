@@ -24,7 +24,7 @@ These files are then saved in the WordPress upload directory and used for demo i
 
 ### How to use:
 
-Add `locate_template( 'radium-one-click-demo-install/example.php', true, true );` to your theme's `function.php`.
+Add `require_once( get_template_directory() . '/wordpress-one-click-demo-install/example.php' );` to your theme's `function.php`.
 
 Copy the files generated above into `demo-files/`.
 
