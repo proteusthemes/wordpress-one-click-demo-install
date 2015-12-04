@@ -49,6 +49,23 @@ class WXR_Parser {
 	}
 }
 
+class WP_FileSystem_Credentials {
+	static function check_credentials() {
+		// Get user credentials for WP filesystem API
+		$demo_import_page_url = wp_nonce_url( 'themes.php?page=radium_demo_installer', 'radium_demo_installer' );
+		if ( false === ( $creds = request_filesystem_credentials( $demo_import_page_url, '', false, false, null ) ) ) {
+			return new WP_Error( 'XML_parse_error', __( 'There was an error when reading this WXR file', 'wordpress-importer' ) );
+		}
+
+		// Now we have credentials, try to get the wp_filesystem running
+		if ( ! WP_Filesystem( $creds ) ) {
+			// Our credentials were no good, ask the user for them again
+			request_filesystem_credentials( $demo_import_page_url, '', true, false, null );
+			return true;
+		}
+	}
+}
+
 /**
  * WXR Parser that makes use of the SimpleXML PHP extension.
  */
@@ -63,7 +80,11 @@ class WXR_Parser_SimpleXML {
 		if ( function_exists( 'libxml_disable_entity_loader' ) ) {
 			$old_value = libxml_disable_entity_loader( true );
 		}
-		$success = $dom->loadXML( file_get_contents( $file ) );
+
+		WP_FileSystem_Credentials::check_credentials();
+
+		global $wp_filesystem;
+		$success = $dom->loadXML( $wp_filesystem->get_contents( $file ) );
 		if ( ! is_null( $old_value ) ) {
 			libxml_disable_entity_loader( $old_value );
 		}
@@ -266,7 +287,10 @@ class WXR_Parser_XML {
 		xml_set_character_data_handler( $xml, 'cdata' );
 		xml_set_element_handler( $xml, 'tag_open', 'tag_close' );
 
-		if ( ! xml_parse( $xml, file_get_contents( $file ), true ) ) {
+		WP_FileSystem_Credentials::check_credentials();
+
+		global $wp_filesystem;
+		if ( ! xml_parse( $xml, $wp_filesystem->get_contents( $file ), true ) ) {
 			$current_line = xml_get_current_line_number( $xml );
 			$current_column = xml_get_current_column_number( $xml );
 			$error_code = xml_get_error_code( $xml );
@@ -412,7 +436,7 @@ class WXR_Parser_Regex {
 	function parse( $file ) {
 		$wxr_version = $in_post = false;
 
-		$fp = $this->fopen( $file, 'r' );
+		$fp = $this->open_file( $file, 'r' );
 		if ( $fp ) {
 			while ( ! $this->feof( $fp ) ) {
 				$importline = rtrim( $this->fgets( $fp ) );
@@ -461,7 +485,7 @@ class WXR_Parser_Regex {
 				}
 			}
 
-			$this->fclose($fp);
+			$this->close_file($fp);
 		}
 
 		if ( ! $wxr_version )
@@ -638,10 +662,14 @@ class WXR_Parser_Regex {
 		return '<' . strtolower( $matches[1] );
 	}
 
-	function fopen( $filename, $mode = 'r' ) {
+	function open_file( $filename, $mode = 'r' ) {
 		if ( $this->has_gzip )
 			return gzopen( $filename, $mode );
-		return fopen( $filename, $mode );
+
+		WP_FileSystem_Credentials::check_credentials();
+
+		global $wp_filesystem;
+		return $wp_filesystem->get_contents( $filename );
 	}
 
 	function feof( $fp ) {
@@ -656,9 +684,8 @@ class WXR_Parser_Regex {
 		return fgets( $fp, $len );
 	}
 
-	function fclose( $fp ) {
+	function close_file( $fp ) {
 		if ( $this->has_gzip )
 			return gzclose( $fp );
-		return fclose( $fp );
 	}
 }
