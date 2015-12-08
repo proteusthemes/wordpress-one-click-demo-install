@@ -177,7 +177,7 @@ class Radium_Theme_Importer {
 			$response_body = wp_remote_retrieve_body( $response );
 		}
 		else {
-			wp_die( printf( wp_kses_post( __( '<div class="error"><p>An error occurred while fetching <strong>%s</strong> from the server!</p><p>Reason: %s - %s</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), $file, $response['response']['code'], $response['response']['message'], apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/docs/cargopress-pt/#import-xml-file' ) ) );
+			wp_die( printf( wp_kses_post( __( '<div class="error"><p>An error occurred while fetching <strong>%s</strong> from the server!</p><p>Reason: %s - %s</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), $file, $response->get_error_code(), $response->get_error_message(), apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/docs/cargopress-pt/#import-xml-file' ) ) );
 		}
 
 		// Get user credentials for WP filesystem API
