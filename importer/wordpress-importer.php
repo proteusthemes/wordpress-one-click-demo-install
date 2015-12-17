@@ -902,23 +902,47 @@ class WP_Import extends WP_Importer {
 			return new WP_Error( 'upload_dir_error', $upload['error'] );
 
 		// fetch the remote url and write it to the placeholder file
-		$headers = wp_get_http( $url, $upload['file'] );
+		$response_data = wp_remote_get( $url );
 
 		// request failed
-		if ( ! $headers ) {
+		if ( is_wp_error( $response_data ) ) {
 			@unlink( $upload['file'] );
 			return new WP_Error( 'import_file_error', esc_html__('Remote server did not respond', 'radium') );
 		}
 
 		// make sure the fetch was successful
-		if ( $headers['response'] != '200' ) {
+		if ( $response_data['response']['code'] != 200 ) {
 			@unlink( $upload['file'] );
-			return new WP_Error( 'import_file_error', sprintf( esc_html__('Remote server returned error response %1$d %2$s', 'radium'), esc_html($headers['response']), get_status_header_desc($headers['response']) ) );
+			return new WP_Error( 'import_file_error', sprintf( esc_html__('Remote server returned error response %1$d %2$s', 'radium'), esc_html($response_data['response']['code']), esc_html( $response_data['response']['message'] ) ) );
+		}
+
+		// write the file to the placeholder file
+		if ( ! is_wp_error( $response_data ) && 200 === $response_data['response']['code'] ) {
+			$response_body = wp_remote_retrieve_body( $response_data );
+
+			// get user credentials for WP filesystem API
+			$demo_import_page_url = wp_nonce_url( 'themes.php?page=radium_demo_installer', 'radium_demo_installer' );
+			if ( false === ( $creds = request_filesystem_credentials( $demo_import_page_url, '', false, false, null ) ) ) {
+				return true;
+			}
+
+			// now we have credentials, try to get the wp_filesystem running
+			if ( ! WP_Filesystem( $creds ) ) {
+				// our credentials were no good, ask the user for them again
+				request_filesystem_credentials( $demo_import_page_url, '', true, false, null );
+				return true;
+			}
+
+			// by this point, the $wp_filesystem global should be working, so let's use it to create a file
+			global $wp_filesystem;
+			if ( ! $wp_filesystem->put_contents( $upload['file'], $response_body, FS_CHMOD_FILE ) ) {
+				return new WP_Error( 'import_file_error', sprintf( esc_html__( 'An error occurred while writing file %s to the upload directory!', 'radium' ), $upload['file'] ) );
+			}
 		}
 
 		$filesize = filesize( $upload['file'] );
 
-		if ( isset( $headers['content-length'] ) && $filesize != $headers['content-length'] ) {
+		if ( isset( $response_data['headers']['content-length'] ) && $filesize != $response_data['headers']['content-length'] ) {
 			@unlink( $upload['file'] );
 			return new WP_Error( 'import_file_error', esc_html__('Remote file is incorrect size', 'radium') );
 		}
@@ -938,8 +962,8 @@ class WP_Import extends WP_Importer {
 		$this->url_remap[$url] = $upload['url'];
 		$this->url_remap[$post['guid']] = $upload['url']; // r13735, really needed?
 		// keep track of the destination if the remote url is redirected somewhere else
-		if ( isset($headers['x-final-location']) && $headers['x-final-location'] != $url )
-			$this->url_remap[$headers['x-final-location']] = $upload['url'];
+		if ( isset($response_data['headers']['x-final-location']) && $response_data['headers']['x-final-location'] != $url )
+			$this->url_remap[$response_data['headers']['x-final-location']] = $upload['url'];
 
 		return $upload;
 	}
