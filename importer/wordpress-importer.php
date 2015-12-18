@@ -923,14 +923,14 @@ class WP_Import extends WP_Importer {
 			// get user credentials for WP filesystem API
 			$demo_import_page_url = wp_nonce_url( 'themes.php?page=radium_demo_installer', 'radium_demo_installer' );
 			if ( false === ( $creds = request_filesystem_credentials( $demo_import_page_url, '', false, false, null ) ) ) {
-				return true;
+				return new WP_Error( 'import_file_error', esc_html__('Your credentials are not valid.', 'radium') );
 			}
 
 			// now we have credentials, try to get the wp_filesystem running
 			if ( ! WP_Filesystem( $creds ) ) {
 				// our credentials were no good, ask the user for them again
 				request_filesystem_credentials( $demo_import_page_url, '', true, false, null );
-				return true;
+				return new WP_Error( 'import_file_error', esc_html__('Your credentials are not valid.', 'radium') );
 			}
 
 			// by this point, the $wp_filesystem global should be working, so let's use it to create a file
