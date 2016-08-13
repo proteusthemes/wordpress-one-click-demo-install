@@ -1,7 +1,10 @@
 Deprecated in favor of [OCDI plugin](https://github.com/proteusthemes/one-click-demo-import).
+====================================
 
-~~One Click Demo Install for WordPress Developers
-==========================
+---
+
+One Click Demo Install for WordPress Developers
+----------------------------------------------
 
 *Note: original script written by https://github.com/FrankM1/radium-one-click-demo-install.*
 
@@ -36,4 +39,4 @@ A new menu should appear under ***Appearance &raquo; Import Demo Data***.
 
 Click the import button.
 
-That's it!~~
+That's it!
