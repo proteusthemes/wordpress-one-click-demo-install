@@ -485,6 +485,9 @@ class WP_Import extends WP_Importer {
 			return;
 
 		foreach ( $this->terms as $term ) {
+			if ( 0 === strpos( $term['term_taxonomy'], 'pa_' ) && ! taxonomy_exists( $term['term_taxonomy'] ) && function_exists( 'wc_create_attribute' ) )
+				$this->register_product_attribute( $term['term_taxonomy'] );
+
 			// if the term already exists in the correct taxonomy leave it alone
 			$term_id = term_exists( $term['slug'], $term['term_taxonomy'] );
 			if ( $term_id ) {
@@ -517,6 +520,33 @@ class WP_Import extends WP_Importer {
 		}
 
 		unset( $this->terms );
+	}
+
+	/**
+	 * Create the WooCommerce product attribute for a pa_* taxonomy and register the taxonomy for this request
+	 *
+	 * @param string $taxonomy Attribute taxonomy name
+	 */
+	function register_product_attribute( $taxonomy ) {
+		$attribute_name = wc_attribute_taxonomy_slug( $taxonomy );
+
+		if ( ! wc_attribute_taxonomy_id_by_name( $attribute_name ) ) {
+			$attribute_id = wc_create_attribute( array(
+				'name' => $attribute_name,
+				'slug' => $attribute_name,
+				'type' => 'select',
+			) );
+
+			if ( is_wp_error( $attribute_id ) )
+				return;
+		}
+
+		register_taxonomy( $taxonomy, 'product', array(
+			'hierarchical' => true,
+			'show_ui'      => false,
+			'query_var'    => true,
+			'rewrite'      => false,
+		) );
 	}
 
 	/**
