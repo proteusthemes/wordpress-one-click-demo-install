@@ -168,17 +168,24 @@ class Radium_Theme_Importer {
 	public function get_demo_content_data_files( $url, $file ) {
 		// Test if the URL to the file is defined
 		if ( empty( $url ) ) {
-			wp_die( printf( wp_kses_post( __( '<div class="error"><p>An error occurred! URL for <strong>%s</strong> is not defined!</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), $file, apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/docs/cargopress-pt/#import-xml-file' ) ) );
+			wp_die( sprintf( wp_kses_post( __( '<div class="error"><p>An error occurred! URL for <strong>%s</strong> is not defined!</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), esc_html( $file ), esc_url( apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/help/' ) ) ) );
 		}
 
 		// Get file contents from the server
 		$response = wp_remote_get( $url );
-		if ( ! is_wp_error( $response ) && 200 === $response['response']['code'] ) {
-			$response_body = wp_remote_retrieve_body( $response );
+		$reason   = '';
+		if ( is_wp_error( $response ) ) {
+			$reason = $response->get_error_code() . ' - ' . $response->get_error_message();
 		}
-		else {
-			wp_die( printf( wp_kses_post( __( '<div class="error"><p>An error occurred while fetching <strong>%s</strong> from the server!</p><p>Reason: %s - %s</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), $file, $response->get_error_code(), $response->get_error_message(), apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/docs/cargopress-pt/#import-xml-file' ) ) );
+		elseif ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			$reason = wp_remote_retrieve_response_code( $response ) . ' - ' . wp_remote_retrieve_response_message( $response );
 		}
+
+		if ( $reason ) {
+			wp_die( sprintf( wp_kses_post( __( '<div class="error"><p>An error occurred while fetching <strong>%s</strong> from the server!</p><p>Reason: %s</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), esc_html( $file ), esc_html( $reason ), esc_url( apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/help/' ) ) ) );
+		}
+
+		$response_body = wp_remote_retrieve_body( $response );
 
 		// Get user credentials for WP filesystem API
 		$demo_import_page_url = wp_nonce_url( 'themes.php?page=radium_demo_installer', 'radium_demo_installer' );
@@ -199,7 +206,7 @@ class Radium_Theme_Importer {
 		// By this point, the $wp_filesystem global should be working, so let's use it to create a file
 		global $wp_filesystem;
 		if ( ! $wp_filesystem->put_contents( $filename, $response_body, FS_CHMOD_FILE ) ) {
-			wp_die( printf( wp_kses_post( __( '<div class="error"><p>An error occurred while writing file <strong>%s</strong> to the upload directory!</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), $file, apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/docs/cargopress-pt/#import-xml-file' ) ) );
+			wp_die( sprintf( wp_kses_post( __( '<div class="error"><p>An error occurred while writing file <strong>%s</strong> to the upload directory!</p><p>Please try to manually import the demo data. Here are instructions on how to do that: <a href="%s" target="_blank">Documentation: Import XML File</a></p></div>', 'radium' ) ), esc_html( $file ), esc_url( apply_filters( 'wpoci_docs_url', 'https://www.proteusthemes.com/help/' ) ) ) );
 		}
 	}
 
