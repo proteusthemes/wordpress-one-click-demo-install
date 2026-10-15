@@ -77,7 +77,7 @@ class WXR_Parser_SimpleXML {
 
 		$dom = new DOMDocument;
 		$old_value = null;
-		if ( function_exists( 'libxml_disable_entity_loader' ) ) {
+		if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
 			$old_value = libxml_disable_entity_loader( true );
 		}
 
@@ -275,6 +275,19 @@ class WXR_Parser_XML {
 		'wp:comment_author_IP',	'wp:comment_date', 'wp:comment_date_gmt', 'wp:comment_content',
 		'wp:comment_approved', 'wp:comment_type', 'wp:comment_parent', 'wp:comment_user_id',
 	);
+	var $wxr_version;
+	var $in_post;
+	var $cdata;
+	var $data;
+	var $sub_data;
+	var $in_tag;
+	var $in_sub_tag;
+	var $authors;
+	var $posts;
+	var $term;
+	var $category;
+	var $tag;
+	var $base_url;
 
 	function parse( $file ) {
 		$this->wxr_version = $this->in_post = $this->cdata = $this->data = $this->sub_data = $this->in_tag = $this->in_sub_tag = false;
@@ -424,6 +437,7 @@ class WXR_Parser_Regex {
 	var $tags = array();
 	var $terms = array();
 	var $base_url = '';
+	var $has_gzip;
 
 	function __construct() {
 		$this->has_gzip = is_callable( 'gzopen' );

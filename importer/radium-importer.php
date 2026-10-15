@@ -51,6 +51,12 @@ class Radium_Theme_Importer {
 	 */
 	public $flag_as_imported = array();
 
+	public $demo_files_path;
+	public $theme_options_file_name;
+	public $widgets_file_name;
+	public $content_demo_file_name;
+	public $widget_import_results;
+
 	/**
 	 * Holds a copy of the object for easy reference.
 	 *
